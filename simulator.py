@@ -24,6 +24,8 @@ class TradeSimulator:
         - tradelog: DataFrame with each trade's entry, exit, PnL, and resulting capital
         """
         logger.info(f"Starting trade simulation with {len(candles)} candles and {len(signals)} signals")
+        logger.info(f"First few signals:\n{signals.head()}")
+        logger.info(f"Last few signals:\n{signals.tail()}")
         
         # Critical validations using assert
         assert 'close' in candles.columns, f"Missing 'close' column in candles. Available columns: {candles.columns.tolist()}"
@@ -48,11 +50,14 @@ class TradeSimulator:
             close_price = candles.iloc[i]['close']
             signal = signals.iloc[i]['signal'].upper()
 
+            logger.debug(f"Processing candle {i}: timestamp={timestamp}, close={close_price}, signal={signal}, position={position}")
+
             if signal == 'BUY' and position is None:
                 # Enter long
                 entry_price = close_price
                 position = 'long'
                 capital *= (1 - self.fee_pct)  # entry fee
+                logger.info(f"Entering LONG position at price {entry_price}, capital after fee: {capital}")
 
             elif signal == 'SELL' and position == 'long':
                 # Exit long
@@ -62,6 +67,8 @@ class TradeSimulator:
 
                 capital += pnl
                 capital *= (1 - self.fee_pct)  # exit fee
+
+                logger.info(f"Exiting LONG position: entry={entry_price}, exit={exit_price}, return={trade_return:.4f}, PnL={pnl:.2f}, final capital={capital:.2f}")
 
                 tradelog.append({
                     'timestamp': timestamp,
@@ -76,8 +83,49 @@ class TradeSimulator:
 
             # HOLD or SELL while no open position → do nothing
 
+        logger.info(f"After main loop - Position: {position}, Entry price: {entry_price}, Capital: {capital}")
+        
+        if position == 'long':
+            #Do a final Sell if still Target Coin will be Held 
+            last_candle = candles.iloc[-1]
+            logger.info(f"Final candle data:\n{last_candle}")
+            
+            exit_price = last_candle['close']
+            logger.info(f"Final candle close price: {exit_price}")
+            
+            if pd.isna(exit_price):
+                logger.warning("Final candle close price is NaN, using entry price as exit price")
+                exit_price = entry_price
+                logger.info(f"Using entry price as exit price: {exit_price}")
+            
+            logger.info(f"Calculating trade return: entry={entry_price}, exit={exit_price}")
+            trade_return = (exit_price - entry_price) / entry_price
+            logger.info(f"Trade return: {trade_return}")
+            
+            pnl = capital * trade_return
+            logger.info(f"PnL: {pnl}")
+
+            capital += pnl
+            capital *= (1 - self.fee_pct)  # exit fee
+            logger.info(f"Final capital after fees: {capital}")
+
+            logger.info(f"Final position close: entry={entry_price}, exit={exit_price}, return={trade_return:.4f}, PnL={pnl:.2f}, final capital={capital:.2f}")
+
+            tradelog.append({
+                'timestamp': last_candle['timestamp'],
+                'entry_price': entry_price,
+                'exit_price': exit_price,
+                'PnL': round(trade_return, 6),   # in decimal, e.g. 0.05 = +5%
+                'capital': round(capital, 2)
+            })
+
+            entry_price = None
+            position = None
+
         logger.info(f"Simulation complete. Final capital: {capital}")
         logger.info(f"Number of trades executed: {len(tradelog)}")
+        if tradelog:
+            logger.info(f"Last trade in tradelog:\n{pd.DataFrame(tradelog).iloc[-1]}")
         
         if not tradelog:
             logger.warning("No trades were executed during the simulation")
