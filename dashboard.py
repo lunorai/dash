@@ -146,7 +146,7 @@ if st.session_state.evaluation_results:
                 )
                 
                 # Show recent trades in a table
-                st.markdown("#### Recent Trades")
+                st.markdown("#### Trade Logs")
                 if not tradelog_df.empty:
                     print(f"Dashboard - Available columns for display: {tradelog_df.columns.tolist()}")
                     display_columns = ['timestamp', 'entry_price', 'exit_price', 'PnL', 'capital']
@@ -157,7 +157,7 @@ if st.session_state.evaluation_results:
                         display_columns = [col for col in display_columns if col in tradelog_df.columns]
                     
                     st.dataframe(
-                        tradelog_df[display_columns].tail(10),
+                        tradelog_df[display_columns],
                         use_container_width=True,
                         hide_index=True
                     )
@@ -165,3 +165,6 @@ if st.session_state.evaluation_results:
             st.markdown("---")
 else:
     st.info("No evaluations run yet. Click 'Run' button above to start.")
+    
+st.markdown("Powered by [Lunor](https://lunor.quest/)")
+   
