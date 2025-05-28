@@ -41,7 +41,7 @@ def fetch_target_data(symbol: str, timeframe: str = "1h") -> pd.DataFrame:
     print(f"Fetching fresh data for {symbol} {timeframe} with pagination...")
     
     start_time = int(datetime(2025, 1, 1).timestamp() * 1000)
-    end_time = int(datetime(2025, 5, 9).timestamp() * 1000)
+    end_time = int((datetime(2025, 5, 9, 23, 59)).timestamp() * 1000)
     
     all_data = []
     current_start = start_time
@@ -81,13 +81,16 @@ def fetch_target_data(symbol: str, timeframe: str = "1h") -> pd.DataFrame:
             
             all_data.append(df_batch)
             
-            # Update start time for next request (pagination)
-            if timeframe == '1h':
-                current_start = int((df_batch['timestamp'].max() + pd.Timedelta(hours=1)).timestamp() * 1000)
-            elif timeframe == '4h':
-                current_start = int((df_batch['timestamp'].max() + pd.Timedelta(hours=4)).timestamp() * 1000)
-            elif timeframe == '1d':
-                current_start = int((df_batch['timestamp'].max() + pd.Timedelta(days=1)).timestamp() * 1000)
+            # 🔥 FIXED PAGINATION: Use raw timestamp from API + interval
+            # OLD: current_start = int((df_batch['timestamp'].max() + pd.Timedelta(hours=1)).timestamp() * 1000)
+            if len(data) > 0:
+                last_timestamp_ms = data[-1][0]  # Raw timestamp from API response
+                if timeframe == '1h':
+                    current_start = last_timestamp_ms + (60 * 60 * 1000)
+                elif timeframe == '4h':
+                    current_start = last_timestamp_ms + (4 * 60 * 60 * 1000)
+                elif timeframe == '1d':
+                    current_start = last_timestamp_ms + (24 * 60 * 60 * 1000)
             
             print(f"Fetched batch: {len(df_batch)} records, total batches: {len(all_data)}")
             
@@ -101,6 +104,10 @@ def fetch_target_data(symbol: str, timeframe: str = "1h") -> pd.DataFrame:
         
         # Combine all batches
         df = pd.concat(all_data, ignore_index=True)
+        
+        # 🔥 ADDED: Remove duplicates that may occur at batch boundaries
+        df = df.drop_duplicates(subset=['timestamp']).sort_values('timestamp').reset_index(drop=True)
+        
         print(f"Total fetched records: {len(df)}")
         
         # Create standard time grid (3073 rows)
@@ -109,7 +116,7 @@ def fetch_target_data(symbol: str, timeframe: str = "1h") -> pd.DataFrame:
         # Align fetched data to standard grid
         aligned_df = pd.merge(standard_grid, df, on='timestamp', how='left')
         
-        # 🔥 SAVE TO CACHE - This was missing!
+        # Save to cache
         aligned_df.to_parquet(cache_file, index=False)
         print(f"✅ SAVED {len(aligned_df)} rows to cache: {cache_file}")
         
