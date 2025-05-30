@@ -191,15 +191,15 @@ st.markdown("""
     .column-header {
         text-align: center;
         font-weight: 600;
-        color: #FFD700;
-        font-size: 0.95rem;
-        padding-bottom: 0.5rem;
-        padding-left: 0.5rem;
+        color: #FFFFFF;
+        font-size: 1.1rem;
+        padding: 0.8rem 0.5rem;
+        margin: 0 2px;
     }
 
     .column-data {
         text-align: center;
-        color: #FFFFFF;
+        color: #CCCCCC;
         font-size: 0.95rem;
     }
 
@@ -219,7 +219,10 @@ st.markdown("""
     .dashboard-title h1 {
         font-size: 2.5rem;
         font-weight: 700;
-        color: #FFD700;
+        background: linear-gradient(180deg, #FFD700 0%, #32CD32 40%, #8A2BE2 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
         margin: 0;
         padding: 2rem 0;
     }
@@ -233,7 +236,7 @@ if 'evaluation_results' not in st.session_state:
 # Title section
 st.markdown("""
     <div style='background: linear-gradient(90deg, #111111, #1A1A1A); padding: 2rem; border-radius: 10px; margin-bottom: 2rem; border: 1px solid #222222;'>
-        <h1 style='color: #FFD700; margin: 0; font-size: 2.5rem; font-weight: 700; text-align: center;'>Strategy Evaluation Dashboard</h1>
+        <h1 style='background: linear-gradient(180deg, #FFD700 0%, #32CD32 40%, #8A2BE2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0; font-size: 2.5rem; font-weight: 700; text-align: center;'>Strategy Evaluation Dashboard</h1>
     </div>
 """, unsafe_allow_html=True)
 
@@ -278,34 +281,21 @@ with st.container():
             if st.button("Run", key=f"btn_{i}"):
                 st.session_state.evaluation_results = []
                 try:
-                    print(f"\n=== Starting Strategy Evaluation for {strategy['id']} ===")
-                    st.write(f"### 🔍 Evaluating Strategy {strategy['id']}")
-                    
                     result = run_strategy_evaluation(strategy['id'])
-                    print(f"\n=== Strategy Result ===")
-                    print(result)
-                    
                     if isinstance(result, dict) and 'error' in result:
                         error_msg = f"Strategy evaluation failed: {result['error']}"
-                        print(f"\n=== Error ===")
-                        print(error_msg)
                         st.error(error_msg)
                         st.session_state.evaluation_results.append({
                             'strategy_name': f"Strategy {strategy['id']}",
                             'result': {'status': 'failed', 'error': result['error']}
                         })
                     else:
-                        print(f"\n=== Success ===")
-                        print("Strategy evaluation completed successfully")
-                        st.success("Strategy evaluation completed successfully")
                         st.session_state.evaluation_results.append({
                             'strategy_name': f"Strategy {strategy['id']}",
                             'result': result
                         })
                 except Exception as e:
                     error_msg = f"Error running strategy: {str(e)}"
-                    print(f"\n=== Exception ===")
-                    print(error_msg)
                     st.error(error_msg)
                     st.session_state.evaluation_results.append({
                         'strategy_name': f"Strategy {strategy['id']}",
@@ -328,7 +318,7 @@ if st.session_state.evaluation_results:
         with st.container():
             st.markdown(f"""
                 <div style='background: #111111; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; border: 1px solid #222222;'>
-                    <h3 style='color: #FFD700; margin: 0; font-size: 1.5rem;'>📊 {result['strategy_name']} Results</h3>
+                    <h3 style='color: #FFFFFF; margin: 0; font-size: 1.5rem;'>📊 {result['strategy_name']} Results</h3>
                 </div>
             """, unsafe_allow_html=True)
             
