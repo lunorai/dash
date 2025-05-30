@@ -27,7 +27,7 @@ def run_strategy_evaluation(strategy_name: str) -> dict:
         # Step 1: Load strategy from strategies folder
         print(f"Loading strategy: {strategy_name}")
         
-        strategy_path = f"strategies/{strategy_name}.py"
+        strategy_path = f"Strategies/{strategy_name}.py"
         if not os.path.exists(strategy_path):
             return {"error": f"Strategy file not found: {strategy_path}"}
         
