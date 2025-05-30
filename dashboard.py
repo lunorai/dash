@@ -278,17 +278,39 @@ with st.container():
             if st.button("Run", key=f"btn_{i}"):
                 st.session_state.evaluation_results = []
                 try:
+                    print(f"\n=== Starting Strategy Evaluation for {strategy['id']} ===")
+                    st.write(f"### 🔍 Evaluating Strategy {strategy['id']}")
+                    
                     result = run_strategy_evaluation(strategy['id'])
-                    st.write("Debug - Strategy Result:", result)  # Debug line
-                    if 'status' in result and result['status'] == 'failed':
-                        st.error(f"Strategy evaluation failed: {result.get('error', 'Unknown error')}")
+                    print(f"\n=== Strategy Result ===")
+                    print(result)
+                    
+                    if isinstance(result, dict) and 'error' in result:
+                        error_msg = f"Strategy evaluation failed: {result['error']}"
+                        print(f"\n=== Error ===")
+                        print(error_msg)
+                        st.error(error_msg)
+                        st.session_state.evaluation_results.append({
+                            'strategy_name': f"Strategy {strategy['id']}",
+                            'result': {'status': 'failed', 'error': result['error']}
+                        })
                     else:
+                        print(f"\n=== Success ===")
+                        print("Strategy evaluation completed successfully")
+                        st.success("Strategy evaluation completed successfully")
                         st.session_state.evaluation_results.append({
                             'strategy_name': f"Strategy {strategy['id']}",
                             'result': result
                         })
                 except Exception as e:
-                    st.error(f"Error running strategy: {str(e)}")
+                    error_msg = f"Error running strategy: {str(e)}"
+                    print(f"\n=== Exception ===")
+                    print(error_msg)
+                    st.error(error_msg)
+                    st.session_state.evaluation_results.append({
+                        'strategy_name': f"Strategy {strategy['id']}",
+                        'result': {'status': 'failed', 'error': str(e)}
+                    })
                 st.rerun()
 
 # Results section
