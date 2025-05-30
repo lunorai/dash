@@ -277,11 +277,18 @@ with st.container():
         with col7:
             if st.button("Run", key=f"btn_{i}"):
                 st.session_state.evaluation_results = []
-                result = run_strategy_evaluation(strategy['id'])
-                st.session_state.evaluation_results.append({
-                    'strategy_name': f"Strategy {strategy['id']}",
-                    'result': result
-                })
+                try:
+                    result = run_strategy_evaluation(strategy['id'])
+                    st.write("Debug - Strategy Result:", result)  # Debug line
+                    if 'status' in result and result['status'] == 'failed':
+                        st.error(f"Strategy evaluation failed: {result.get('error', 'Unknown error')}")
+                    else:
+                        st.session_state.evaluation_results.append({
+                            'strategy_name': f"Strategy {strategy['id']}",
+                            'result': result
+                        })
+                except Exception as e:
+                    st.error(f"Error running strategy: {str(e)}")
                 st.rerun()
 
 # Results section
@@ -306,10 +313,10 @@ if st.session_state.evaluation_results:
             # Key metrics in modern cards
             col1, col2, col3, col4 = st.columns(4)
             metrics = [
-                ("Total Return", f"{strategy_result['return_percentage']:.2f}%", f"{strategy_result['return_percentage']:.2f}%"),
-                ("Max Drawdown", f"{strategy_result['max_drawdown_percentage']:.2f}%", f"-{strategy_result['max_drawdown_percentage']:.2f}%", "inverse"),
-                ("Sharpe Ratio", f"{strategy_result['sharpe_ratio']:.2f}", None),
-                ("Final Capital", f"${strategy_result['final_capital']:.2f}", f"${strategy_result['final_capital'] - strategy_result['initial_capital']:.2f}")
+                ("Total Return", f"{strategy_result.get('return_percentage', 0):.2f}%", f"{strategy_result.get('return_percentage', 0):.2f}%"),
+                ("Max Drawdown", f"{strategy_result.get('max_drawdown_percentage', 0):.2f}%", f"-{strategy_result.get('max_drawdown_percentage', 0):.2f}%", "inverse"),
+                ("Sharpe Ratio", f"{strategy_result.get('sharpe_ratio', 0):.2f}", None),
+                ("Final Capital", f"${strategy_result.get('final_capital', 0):.2f}", f"${strategy_result.get('final_capital', 0) - strategy_result.get('initial_capital', 0):.2f}")
             ]
             
             for col, (label, value, delta, *args) in zip([col1, col2, col3, col4], metrics):
